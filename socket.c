@@ -120,18 +120,11 @@ int socket_recive_message(socket_t *self, char* buffer, size_t size){
     int total_received = 0;
     int bytes_recived = 0;
 
-    while (total_received < size) {
-        bytes_recived = 
-            recv(self->socket, &buffer[total_received], 1, MSG_NOSIGNAL);
-
-        if (bytes_recived < 0) { 
-          printf("Error recibing info\n");
-          return -1;
-        } else if (bytes_recived == 0) { 
-          return total_received;
-        } else {
-          total_received += bytes_recived;
-        }
+    while ((bytes_recived = recv(self->socket, &buffer[total_received], size - total_received, MSG_NOSIGNAL)) >0) {
+      total_received += bytes_recived;
+    }
+    if (bytes_recived < 0) { 
+      printf("Error recibing info\n");
     }
     return total_received;
 }
