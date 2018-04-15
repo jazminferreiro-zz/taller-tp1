@@ -51,13 +51,13 @@ void encryptor_swap_S(encryptor_t * self, int i, int j){
 
 void stderr_keystream_hexa_upperrcase(encryptor_t *self , int len){
   for (int i=0; i < len; i++){
-    fprintf(stderr, "%02X", self->keystream[i] & 0xff);
+    fprintf(stderr, "%02hhX", self->keystream[i]);
   }
 }
 
 void stdin_input_hexa_lowercase(char * input, int len){
   for (int i=0; i < len; i++){
-    printf("%02x", input[i] & 0xff);
+    printf("%02hhx", input[i]);
   }
 }
 
