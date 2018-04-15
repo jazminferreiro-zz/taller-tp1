@@ -26,15 +26,14 @@
   
 int client(const char * ip, const int port, 
   const char *key, const char * file_name){
-  socket_t * skt = (socket_t *)malloc(sizeof(socket_t));
-  if (socket_create(skt, ip, port) != SUCCESS){
+  socket_t skt;
+  if (socket_create(&skt, ip, port) != SUCCESS){
     printf("Error in socket creation\n");
     return ERROR;
   }
   
-  if (socket_connect(skt) != SUCCESS || skt->socket < 1){
-    socket_destroy(skt);
-    free(skt);
+  if (socket_connect(&skt) != SUCCESS || skt.socket < 1){
+    socket_destroy(&skt);
     return ERROR;
   }
 
@@ -44,21 +43,20 @@ int client(const char * ip, const int port,
   FILE * file = fopen(file_name, "rb");
   if (file == NULL){
     printf("Error opening file %s\n", file_name);
-    socket_destroy(skt);
-    free(skt);
+    socket_destroy(&skt);
     return ERROR; // error
   }
   fseek(file,0,SEEK_END);
   int file_len = ftell(file);
   
-  client_send_file_to_server(skt, &client_encryptor, file, file_len);
+  client_send_file_to_server(&skt, &client_encryptor, file, file_len);
 
   encryptor_destroy(&client_encryptor);
     
   fclose(file);
  
-  socket_destroy(skt);
-  free(skt);
+  socket_destroy(&skt);
+
   return SUCCESS;
 }
 
