@@ -19,7 +19,7 @@
 
 
 int socket_creation(socket_t *self);
-int addrinfo(socket_t *self);
+struct addrinfo * addrinfo(socket_t *self);
 int get_digits(int num);
 
 //_____________________________________________________________________ privates
@@ -33,44 +33,46 @@ int get_digits(int num){
     return digits;
 }
 
-int addrinfo(socket_t *self){
-    int digitos = get_digits(self->port);
-    char str_port[MAX_PORT_LEN];
-    snprintf(str_port,digitos +1 , "%d", self->port);
+struct addrinfo * addrinfo(socket_t *self){
+  int digitos = get_digits(self->port);
+  char str_port[MAX_PORT_LEN];
+  snprintf(str_port,digitos +1 , "%d", self->port);
   
 
-    struct addrinfo hints;
-    memset(&hints, 0, sizeof(struct addrinfo)); 
-    hints.ai_family = AF_INET;       //IPv4 
-    hints.ai_socktype = SOCK_STREAM; //TCP 
-    hints.ai_flags = 0; 
+  struct addrinfo hints;
+  memset(&hints, 0, sizeof(struct addrinfo)); 
+  hints.ai_family = AF_INET;       //IPv4 
+  hints.ai_socktype = SOCK_STREAM; //TCP 
+  hints.ai_flags = 0; 
 
-    struct addrinfo *addrinfoNode;
+  struct addrinfo *addrinfoNode;
     
 
-    int addrinfo_returnvalue = 
-            getaddrinfo(self->host_name, str_port, &hints, &addrinfoNode);
+  int addrinfo_returnvalue = getaddrinfo(self->host_name, str_port, &hints, &addrinfoNode);
 
-    if (addrinfo_returnvalue != SUCCESS){
-      printf("Error in getaddrinfo: %s\n", gai_strerror(addrinfo_returnvalue));
-      return ERROR;
-    }
-    self->addrinfo = addrinfoNode;
-    return SUCCESS;
+  if (addrinfo_returnvalue != SUCCESS){
+    printf("Error in getaddrinfo: %s\n", gai_strerror(addrinfo_returnvalue));
+    return NULL;
+  }
+  return addrinfoNode;
 }
 
 int socket_creation(socket_t *self){
+
+  struct addrinfo *addrinfoNode = addrinfo(self);
+
   int socket_num = 0;
-  while (self->addrinfo != NULL) {
+  while (addrinfoNode != NULL) {
     socket_num = //
-      socket(self->addrinfo->ai_family, 
-          self->addrinfo->ai_socktype, self->addrinfo->ai_protocol);
+      socket(addrinfoNode->ai_family, addrinfoNode->ai_socktype, addrinfoNode->ai_protocol);
     if (socket_num != -1) {
       self-> socket = socket_num;
+      free(addrinfoNode);
       return SUCCESS;
     }
-    self->addrinfo = self->addrinfo->ai_next;
+    addrinfoNode = addrinfoNode->ai_next;
   }
+  free(addrinfoNode);
   return ERROR;
 }
 
@@ -84,7 +86,7 @@ int socket_create(socket_t *self, const char * host_name, unsigned short port){
     self->port = port;
     self->is_connected = false;
 
-    if (addrinfo(self) != SUCCESS || socket_creation(self) != SUCCESS) { 
+    if (socket_creation(self) != SUCCESS) { 
       return ERROR;
     }
 
@@ -109,9 +111,7 @@ int socket_accept(socket_t *self, socket_t* accepted_socket){
 }
 
 int socket_destroy(socket_t *self){
-  freeaddrinfo(self->addrinfo);
   shutdown(self->socket, SHUT_RDWR);
-
   close(self->socket);
   return SUCCESS;
 }
@@ -154,22 +154,25 @@ int socket_send_message(socket_t *self, const char* buffer, size_t size){
 }
 
 int socket_connect(socket_t *self){
+
+  struct addrinfo *addrinfoNode = addrinfo(self);
+
   int create_returnvalue = 0;
-  while (self->addrinfo != NULL && self->is_connected == false) {
+  while (addrinfoNode != NULL && self->is_connected == false) {
     if (create_returnvalue == 1) {
       return ERROR;
     }
-    int connection_returnvalue = //
-    connect(self->socket, self->addrinfo->ai_addr, self->addrinfo->ai_addrlen);
+    int connection_returnvalue = connect(self->socket, addrinfoNode->ai_addr, addrinfoNode->ai_addrlen);
     self->is_connected = (connection_returnvalue != -1);
     if (self->is_connected){
       break;
     }
     printf("Error in socket connection: %s\n", strerror(errno));
     close(self->socket);
-    self->addrinfo = self->addrinfo->ai_next;
+    addrinfoNode = addrinfoNode->ai_next;
     create_returnvalue = socket_creation(self);
   }
+  freeaddrinfo(addrinfoNode);
   if (self->is_connected == false) {
     return ERROR; 
   }
@@ -178,18 +181,29 @@ int socket_connect(socket_t *self){
 
 
 int socket_bind_and_listen(socket_t *self){
-    int bindReturnValue = //
-      bind(self->socket, self->addrinfo->ai_addr, self->addrinfo->ai_addrlen);
-    if (bindReturnValue == -1) {
-        printf("%i\n",self-> port);
-        printf("Error in bind: %s\n", strerror(errno));
-        return ERROR;
+
+  struct addrinfo *addrinfoNode = addrinfo(self);
+
+  int bindReturnValue = -1;
+  while (addrinfoNode != NULL) {
+    bindReturnValue = bind(self->socket, addrinfoNode->ai_addr, addrinfoNode->ai_addrlen);
+    if (bindReturnValue != -1) {
+      break;
     }
-    int listenReturnValue = listen(self->socket, 20);
-    if (listenReturnValue == -1) {
-        printf("Error in listen: %s\n", strerror(errno));
-        return ERROR;
-    }
-    self-> is_connected = true;
-    return SUCCESS;
+    addrinfoNode = addrinfoNode->ai_next;
+  }
+  free(addrinfoNode);
+
+  if (bindReturnValue == -1) {
+    printf("%i\n",self-> port);
+    printf("Error in bind: %s\n", strerror(errno));
+    return ERROR;
+  }
+  int listenReturnValue = listen(self->socket, 20);
+  if (listenReturnValue == -1) {
+    printf("Error in listen: %s\n", strerror(errno));
+    return ERROR;
+  }
+  self-> is_connected = true;
+  return SUCCESS;
 }
