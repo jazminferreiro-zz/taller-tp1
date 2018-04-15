@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-
+#define S_SIZE 256
 
 void encryptor_ksa(encryptor_t * self);
 void encryptor_prga(encryptor_t * self, int len);
@@ -16,14 +16,14 @@ void stdin_input_hexa_lowercase(char * input, int len);
 
 //key-scheduling
 void encryptor_ksa(encryptor_t * self){
-  for (int i=0; i < 256; i++){
+  for (int i=0; i < S_SIZE; i++){
     self->S[i] = i;
   }
   int keyLen = strlen(self->key);
 
   int j = 0;
-  for (int i=0; i < 256; i++){
-    j = (j+ self->S[i] + self->key[i % keyLen]) %256;
+  for (int i=0; i < S_SIZE; i++){
+    j = (j+ self->S[i] + self->key[i % keyLen]) %S_SIZE;
     encryptor_swap_S(self,i,j);
   }
 }
@@ -32,11 +32,11 @@ void encryptor_ksa(encryptor_t * self){
 void encryptor_prga(encryptor_t * self, int len){
   int  k;
   for (int index =0; index <len; index++){
-    self->i = (self->i +1) % 256;
-    self->j = (self->j +self->S[self->i]) % 256;
+    self->i = (self->i +1) % S_SIZE;
+    self->j = (self->j +self->S[self->i]) % S_SIZE;
     encryptor_swap_S(self, self->i, self->j);
 
-    k = self->S[(self->S[self->i]+self->S[self->j]) % 256];
+    k = self->S[(self->S[self->i]+self->S[self->j]) % S_SIZE];
     self->keystream[index] = k;
   }
 }
