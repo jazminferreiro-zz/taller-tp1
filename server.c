@@ -25,13 +25,13 @@
 
 
 int server(const int port, const char * key) {
-  socket_t * skt = (socket_t *)malloc(sizeof(socket_t)); 
-  if (socket_create(skt, NULL, port) != SUCCESS){
+  socket_t skt;
+  if (socket_create(&skt, NULL, port) != SUCCESS){
     return ERROR;
   }
 
-  if (socket_bind_and_listen(skt) != SUCCESS){
-    socket_destroy(skt);
+  if (socket_bind_and_listen(&skt) != SUCCESS){
+    socket_destroy(&skt);
     return ERROR;
   }
   encryptor_t server_decryptor;
@@ -39,19 +39,17 @@ int server(const int port, const char * key) {
 
   FILE * file = fopen(OUTPUT_FILE, "wb");
   if (file == NULL){
-    socket_destroy(skt);
-    free(skt);
+    socket_destroy(&skt);
     return ERROR;
   }
 
-  int client_listening =  server_accept_client(skt, &server_decryptor, file);
+  int client_listening =  server_accept_client(&skt, &server_decryptor, file);
 
   fclose(file);
   
   encryptor_destroy(&server_decryptor);
 
-  socket_destroy(skt);
-  free(skt);
+  socket_destroy(&skt);
 
   return client_listening;
 }
