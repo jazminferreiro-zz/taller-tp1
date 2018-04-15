@@ -39,7 +39,10 @@ int main(int argc, char *argv[]){
       printf("Parametros incorrectos. \n");
       return ERROR;
     }
-    return client(argv[CLIENT_IP],atoi(argv[CLIENT_PORT]),argv[CLIENT_KEY],argv[CLIENT_FILE_NAME]);
+    return client(argv[CLIENT_IP],//
+    atoi(argv[CLIENT_PORT]),//
+    argv[CLIENT_KEY],//
+    argv[CLIENT_FILE_NAME]);
   }
   return server(atoi(argv[SERVER_PORT]),argv[SERVER_KEY]);
 }

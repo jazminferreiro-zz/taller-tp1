@@ -56,7 +56,6 @@ int server(const int port, const char * key) {
 
 int server_accept_client(socket_t * skt, 
   encryptor_t * server_decryptor, FILE * file){
-
   bool is_socket_accepted_valid = true;
   char chunk[SERVER_CHUNK_LEN+1];
   socket_t * peer_socket = (socket_t *)malloc(sizeof(socket_t));
@@ -65,8 +64,9 @@ int server_accept_client(socket_t * skt,
     printf("Error in accept client: %s\n", strerror(errno));
     is_socket_accepted_valid = false;
   } else {
-    int bytes_received ;
-    while ((bytes_received = socket_recive_message(peer_socket, chunk, SERVER_CHUNK_LEN))> 0){
+    int bytes_received;
+    while ((bytes_received = socket_recive_message(peer_socket, //
+    chunk, SERVER_CHUNK_LEN))> 0){
       encryptor_encrypt(server_decryptor,chunk, bytes_received);
       fwrite(chunk, bytes_received, 1, file);
     }
