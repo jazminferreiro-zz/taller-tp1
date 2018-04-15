@@ -72,16 +72,13 @@ void encryptor_encrypt(encryptor_t * self, char * input, int len){
   free(self->keystream);
 }
 
-encryptor_t * encryptor_create(const char * key){
-  encryptor_t * self = (encryptor_t *)malloc(sizeof(encryptor_t));
+void encryptor_create(encryptor_t * self, const char * key){
   self->key = key;
   self-> i = 0;
   self-> j = 0;
   encryptor_ksa(self);
-  return self;
 }
 
 void encryptor_destroy(encryptor_t * self){
-  free(self);
 }
 

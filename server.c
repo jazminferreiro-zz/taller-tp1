@@ -34,8 +34,8 @@ int server(const int port, const char * key) {
     socket_destroy(skt);
     return ERROR;
   }
-
-  encryptor_t * server_decryptor = encryptor_create(key);
+  encryptor_t server_decryptor;
+  encryptor_create(&server_decryptor, key);
 
   FILE * file = fopen(OUTPUT_FILE, "wb");
   if (file == NULL){
@@ -44,11 +44,11 @@ int server(const int port, const char * key) {
     return ERROR;
   }
 
-  int client_listening =  server_accept_client(skt, server_decryptor, file);
+  int client_listening =  server_accept_client(skt, &server_decryptor, file);
 
   fclose(file);
   
-  encryptor_destroy(server_decryptor);
+  encryptor_destroy(&server_decryptor);
 
   socket_destroy(skt);
   free(skt);

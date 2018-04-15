@@ -38,7 +38,8 @@ int client(const char * ip, const int port,
     return ERROR;
   }
 
-  encryptor_t * client_encryptor = encryptor_create(key);
+  encryptor_t client_encryptor;
+  encryptor_create(&client_encryptor, key);
 
   FILE * file = fopen(file_name, "rb");
   if (file == NULL){
@@ -50,9 +51,9 @@ int client(const char * ip, const int port,
   fseek(file,0,SEEK_END);
   int file_len = ftell(file);
   
-  client_send_file_to_server(skt, client_encryptor, file, file_len);
+  client_send_file_to_server(skt, &client_encryptor, file, file_len);
 
-  encryptor_destroy(client_encryptor);
+  encryptor_destroy(&client_encryptor);
     
   fclose(file);
  
